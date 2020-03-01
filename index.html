@@ -1,0 +1,422 @@
+<!DOCTYPE html>
+<html lang="en">
+<link href="https://fonts.googleapis.com/css?family=Archivo|Cabin&display=swap" rel="stylesheet">
+<link rel="icon" href="icon.icok">
+<head>
+  <meta charset="UTF-8">
+  <title>Game of life</title>
+</head>
+<body>
+<div id="app">
+  <div :class="{menu: true, show: isMenuActive}">
+    <div class="menu-column">
+      <div class="menu-title">
+        <a href="google.com">
+          <span>Game of life</span>
+        </a>
+      </div>
+      <div @click="initializeBoard()" class="menu-navigate">
+        Go
+      </div>
+    </div>
+    <div class="menu-column">
+      <div class="menu-content">
+        <span>The Game of Life, also known simply as Life, is a cellular automaton devised by the British mathematician John Horton Conway in 1970</span>
+        <span>The game is a zero-player game, meaning that its evolution is determined by its initial state, requiring no further input. One interacts with the Game of Life by creating an initial configuration and observing how it evolves. It is Turing complete and can simulate a universal constructor or any other Turing machine.</span>
+        <span style="text-transform: uppercase; margin-top: 30px; font-size: 14px;">Check code on github</span>
+      </div>
+    </div>
+  </div>
+  <div :class="{'loader-wrapper': true, show: loading}">
+    <div class="lds-grid"><div></div><div></div><div></div><div></div><div></div><div></div><div></div><div></div><div></div></div>
+  </div>
+  <div :class="{'content': true, show: !loading && started}">
+    <div class="game">
+      <canvas id="canvas" :width="width*size" :height="height*size" ref="canvas"></canvas>
+    </div>
+    <div class="controls">
+      <div class="button play" @click="animation ? pauseAnimation() : startAnimation()">{{animation ? 'Stop' :
+        'Start'}}
+      </div>
+      <div class="button restart" @click="initializeBoard(true)">Restart</div>
+    </div>
+    <div v-if="!isMenuActive" @click="openMenu()" class="navigate">
+      Back
+    </div>
+  </div>
+</div>
+</body>
+<script src="https://cdn.jsdelivr.net/npm/vue@2.6.11"></script>
+<script>
+  const app = new Vue({
+    el: '#app',
+    data: () => ({
+      isMenuActive: true,
+      started: false,
+      board: null,
+      height: 60,
+      width: 100,
+      size: 10,
+      animation: null,
+      loading: false
+    }),
+    methods: {
+      initializeBoard(restart = false) {
+        this.closeMenu()
+        if (restart || !this.board) {
+          if (this.animation) {
+            this.pauseAnimation()
+          }
+          this.loading = true
+          this.makeBoard(this.width, this.height)
+          this.fillBoard()
+        }
+        if (!this.started) {
+          this.started = true
+          setTimeout(() => {
+            this.loading = false
+            this.startAnimation()
+          }, 1000)
+        } else {
+          this.loading = false
+          this.startAnimation()
+        }
+      },
+      renderBoard() {
+        const {ctx} = this.getCanvas()
+        for (let col = 0; col < this.width; col++) {
+          for (let row = 0; row < this.width; row++) {
+            const cell = this.board[col][row]
+            ctx.beginPath()
+            ctx.rect(col * this.size, row * this.size, this.size, this.size)
+            ctx.fillStyle = cell ? 'white' : 'black'
+            ctx.fill()
+            ctx.stroke()
+          }
+        }
+      },
+      renderGeneration() {
+        const nextGeneration = this.board.map(el => [...el])
+        for (let col = 0; col < this.width; col++) {
+          for (let row = 0; row < this.width; row++) {
+            const cell = this.board[col][row]
+            let count = 0
+            for (let i = -1; i < 2; i++) {
+              for (let j = -1; j < 2; j++) {
+                if (i === 0 && j === 0) {
+                  continue
+                }
+
+                const x = col + i
+                const y = row + j
+
+                if (x < this.width && x >= 0 && y < this.height && y >= 0) {
+                  const currNeighbor = this.board[x][y]
+                  count += currNeighbor
+                }
+
+              }
+            }
+
+            if (cell && (count < 2 || count > 3)) {
+              nextGeneration[col][row] = 0
+            } else if (!cell && count === 3) {
+              nextGeneration[col][row] = 1
+            }
+          }
+        }
+
+        return nextGeneration
+      },
+      updateBoard() {
+        this.board = this.renderGeneration()
+        this.renderBoard()
+        this.startAnimation()
+      },
+      // util functions
+      makeBoard(sizeX, sizeY) {
+        this.board = [...Array(sizeX)].map(el => Array(sizeY))
+      },
+      fillBoard() {
+        for (let col = 0; col < this.width; col++) {
+          for (let row = 0; row < this.width; row++) {
+            this.board[col][row] = Math.floor(Math.random() * 2)
+          }
+        }
+      },
+      getCanvas() {
+        const canvas = this.$refs.canvas
+        return {canvas, ctx: canvas.getContext('2d')}
+      },
+      pauseAnimation() {
+        window.cancelAnimationFrame(this.animation)
+        this.animation = null
+      },
+      startAnimation() {
+        this.animation = window.requestAnimationFrame(this.updateBoard)
+      },
+      // UI functions
+      openMenu() {
+        this.isMenuActive = true
+      },
+      closeMenu() {
+        this.isMenuActive = false
+      }
+    }
+  })
+
+  Vue.config.devtools = true
+</script>
+<style>
+  html, body, #app, .menu, .content, .loader-wrapper{
+    margin: 0;
+    padding: 0;
+    width: 100vw;
+    height: 100vh;
+  }
+
+  .loader-wrapper {
+    position: fixed;
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    opacity: 0;
+    transition: opacity 0.4s linear;
+    z-index: 1;
+  }
+
+  .loader-wrapper.show {
+    opacity: 1;
+  }
+
+  .lds-grid {
+    position: relative;
+    width: 72px;
+    height: 72px;
+  }
+
+  #app {
+    font-family: 'Archivo', sans-serif;
+    background: black;
+    color: white;
+  }
+
+  .menu {
+    position: fixed;
+    background-color: rgba(10, 10, 10, 0.7);
+    display: flex;
+    justify-content: space-between;
+    top: 100vh;
+    transition: top 0.4s ease;
+    z-index: 2;
+  }
+
+  .menu.show {
+    top: 0;
+  }
+
+  .menu-column {
+    flex: 0.4;
+    height: 100%;
+    display: flex;
+    flex-direction: column;
+    justify-content: space-around;
+    margin: 50px;
+  }
+
+  .menu-title {
+    font-family: 'Cabin', sans-serif;
+    text-transform: uppercase;
+    font-size: 64px;
+    position: relative;
+    display: flex;
+    justify-content: center;
+    align-items: center;
+  }
+
+  .menu-title a {
+    text-decoration: none;
+    color: white;
+    z-index: 2;
+    text-align: center;
+  }
+
+  .menu-title span {
+    text-align: center;
+  }
+
+  .menu-title a, span {
+    width: 100%;
+    height: 100%;
+  }
+
+  .menu-title a:before, a:after {
+    content: '';
+    position: absolute;
+    width: 10px;
+    height: 10px;
+    background: white;
+    transition: all 0.6s ease;
+    z-index: 1;
+  }
+
+  .menu-title a:before {
+    bottom: -2px;
+    left: -2px;
+  }
+
+  .menu-title a:after {
+    top: -2px;
+    right: -2px;
+  }
+
+  /*.menu-title a:hover:before {*/
+  /*  width: 100%;*/
+  /*  height: 100%;*/
+  /*}*/
+
+  /*.menu-title a:hover:after {*/
+  /*  width: 100%;*/
+  /*  height: 100%;*/
+  /*}*/
+
+  .menu-content {
+    display: flex;
+    flex-direction: column;
+    text-align: right;
+    font-size: 18px;
+  }
+
+  .menu-content span {
+    margin: 20px 0;
+  }
+
+  .content {
+    display: flex;
+    flex-direction: column;
+    justify-content: center;
+    align-items: center;
+    opacity: 0;
+    transition: opacity 0.4s linear;
+    z-index: 2;
+  }
+
+  .content.show {
+    opacity: 1;
+  }
+
+  .game {
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    margin: 50px 0;
+  }
+
+  .controls {
+    z-index: 10;
+    display: flex;
+  }
+
+  .navigate {
+    position: fixed;
+    bottom: 50px;
+    right: 50px;
+    z-index: 10;
+    cursor: pointer;
+  }
+
+  .button {
+    cursor: pointer;
+    width: 120px;
+    height: 40px;
+    border: 3px solid white;
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    font-size: 24px;
+    margin: 0 10px;
+  }
+</style>
+<style>
+  <!--  loader style  -->
+  .lds-grid {
+    display: inline-block;
+    position: relative;
+    width: 80px;
+    height: 80px;
+  }
+
+  .lds-grid div {
+    position: absolute;
+    width: 16px;
+    height: 16px;
+    border-radius: 50%;
+    background: #fff;
+    animation: lds-grid 1.2s linear infinite;
+  }
+
+  .lds-grid div:nth-child(1) {
+    top: 8px;
+    left: 8px;
+    animation-delay: 0s;
+  }
+
+  .lds-grid div:nth-child(2) {
+    top: 8px;
+    left: 32px;
+    animation-delay: -0.4s;
+  }
+
+  .lds-grid div:nth-child(3) {
+    top: 8px;
+    left: 56px;
+    animation-delay: -0.8s;
+  }
+
+  .lds-grid div:nth-child(4) {
+    top: 32px;
+    left: 8px;
+    animation-delay: -0.4s;
+  }
+
+  .lds-grid div:nth-child(5) {
+    top: 32px;
+    left: 32px;
+    animation-delay: -0.8s;
+  }
+
+  .lds-grid div:nth-child(6) {
+    top: 32px;
+    left: 56px;
+    animation-delay: -1.2s;
+  }
+
+  .lds-grid div:nth-child(7) {
+    top: 56px;
+    left: 8px;
+    animation-delay: -0.8s;
+  }
+
+  .lds-grid div:nth-child(8) {
+    top: 56px;
+    left: 32px;
+    animation-delay: -1.2s;
+  }
+
+  .lds-grid div:nth-child(9) {
+    top: 56px;
+    left: 56px;
+    animation-delay: -1.6s;
+  }
+
+  @keyframes lds-grid {
+    0%, 100% {
+      opacity: 1;
+    }
+    50% {
+      opacity: 0.5;
+    }
+  }
+
+</style>
+</html>
