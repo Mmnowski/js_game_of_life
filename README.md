@@ -1,2 +1,2 @@
 # js_game_of_life
-Conway's Game of Life written in JS.
+Conway's Game of Life written in JS + Vue.

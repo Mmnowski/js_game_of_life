@@ -1,7 +1,7 @@
 <!DOCTYPE html>
 <html lang="en">
 <link href="https://fonts.googleapis.com/css?family=Archivo|Cabin&display=swap" rel="stylesheet">
-<link rel="icon" href="icon.ico">
+<link rel="icon" href="assets/icon.ico">
 <head>
   <meta charset="UTF-8">
   <title>Game of life</title>
@@ -18,7 +18,7 @@
       <div @click="initializeBoard()" class="menu-navigate">
         <span>Start</span>
         <!--    Font Awesome icon, license link: https://fontawesome.com/license     -->
-        <img height="24" src="angle-right-solid.svg"/>
+        <img height="24" src="assets/angle-right-solid.svg"/>
       </div>
     </div>
     <div class="menu-column">
@@ -46,7 +46,7 @@
     </div>
     <div @click="openMenu()" :class="{navigate: true, show: isMenuActive}">
       <!--    Font Awesome icon, license link: https://fontawesome.com/license     -->
-      <img style="transform: rotate(-90deg);" height="24" src="angle-right-solid.svg">
+      <img style="transform: rotate(-90deg);" height="24" src="assets/angle-right-solid.svg">
     </div>
   </div>
 </div>
