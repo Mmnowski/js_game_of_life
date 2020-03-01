@@ -78,8 +78,9 @@
             this.startAnimation()
           }, 1000)
         } else {
-          this.loading = false
-          this.startAnimation()
+          if (!this.animation) {
+            this.startAnimation()
+          }
         }
       },
       renderBoard() {
